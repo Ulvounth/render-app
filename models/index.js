@@ -7,10 +7,17 @@ const connection = {
   database: process.env.DATABASE_NAME,
   username: process.env.ADMIN_USERNAME,
   password: process.env.ADMIN_PASSWORD,
-  port: process.env.DB_PORT,
+  port: process.env.DB_PORT || 3306,
   host: process.env.HOST,
   dialect: process.env.DIALECT,
+  dialectOptions: {
+    ssl: process.env.NODE_ENV === 'production' ? {
+      require: true,
+      rejectUnauthorized: false
+    } : false
+  },
   dialectmodel: process.env.DIALECTMODEL,
+  logging: process.env.NODE_ENV === 'development' ? console.log : false
 };
 const sequelize = new Sequelize(connection);
 const db = {};

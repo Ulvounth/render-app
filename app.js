@@ -15,7 +15,26 @@ var hotelsRouter = require('./routes/hotels');
 var roomsRouter = require('./routes/rooms');
 
 var db = require("./models");
-db.sequelize.sync({ force: false })
+
+// Database initialization with better error handling
+async function initializeDatabase() {
+  try {
+    await db.sequelize.authenticate();
+    console.log('Database connection has been established successfully.');
+    
+    // Sync database with alter: true for production
+    await db.sequelize.sync({ 
+      force: false, 
+      alter: process.env.NODE_ENV === 'production' 
+    });
+    console.log('Database synchronized successfully.');
+  } catch (error) {
+    console.error('Unable to connect to the database:', error);
+    // Don't crash the app, but log the error
+  }
+}
+
+initializeDatabase();
 
 var app = express();
 
