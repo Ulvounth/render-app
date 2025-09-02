@@ -22,12 +22,52 @@ async function initializeDatabase() {
     await db.sequelize.authenticate();
     console.log('Database connection has been established successfully.');
     
-    // Sync database with alter: true for production
-    await db.sequelize.sync({ 
-      force: false, 
-      alter: process.env.NODE_ENV === 'production' 
-    });
+    // For production, use force: true to recreate tables if they don't exist
+    // This will only run once to set up the initial schema
+    const syncOptions = {
+      force: process.env.FORCE_DB_SYNC === 'true',
+      alter: process.env.NODE_ENV === 'production' && process.env.FORCE_DB_SYNC !== 'true'
+    };
+    
+    await db.sequelize.sync(syncOptions);
     console.log('Database synchronized successfully.');
+    
+    // List all tables to verify they were created
+    const tables = await db.sequelize.getQueryInterface().showAllTables();
+    console.log('Available tables:', tables);
+    
+    // If hotels table doesn't exist, create it manually
+    if (!tables.includes('Hotels') && !tables.includes('hotels')) {
+      console.log('Hotels table not found, creating manually...');
+      await db.sequelize.query(`
+        CREATE TABLE IF NOT EXISTS Hotels (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          Name VARCHAR(255),
+          Location VARCHAR(255)
+        );
+      `);
+      
+      await db.sequelize.query(`
+        CREATE TABLE IF NOT EXISTS Rooms (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          RoomNumber VARCHAR(255),
+          Price DECIMAL(10,2),
+          HotelId INT,
+          FOREIGN KEY (HotelId) REFERENCES Hotels(id)
+        );
+      `);
+      
+      await db.sequelize.query(`
+        CREATE TABLE IF NOT EXISTS Users (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          Username VARCHAR(255) UNIQUE,
+          Password VARCHAR(255)
+        );
+      `);
+      
+      console.log('Tables created manually.');
+    }
+    
   } catch (error) {
     console.error('Unable to connect to the database:', error);
     // Don't crash the app, but log the error

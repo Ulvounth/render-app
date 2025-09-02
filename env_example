@@ -7,3 +7,4 @@ PORT=3000
 HOST=
 DB_PORT=3306
 NODE_ENV=production
+FORCE_DB_SYNC=true
